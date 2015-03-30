@@ -17,6 +17,7 @@ public class GameEngine implements KeyListener, GameReporter{
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();	
 	private SpaceShip v;	
 	
+	private int gameSpeed = 50;
 	private Timer timer;
 	
 	private long score = 0;
@@ -28,7 +29,7 @@ public class GameEngine implements KeyListener, GameReporter{
 		
 		gp.sprites.add(v);
 		
-		timer = new Timer(50, new ActionListener() {
+		timer = new Timer(gameSpeed, new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -98,12 +99,16 @@ public class GameEngine implements KeyListener, GameReporter{
                 v.moveUD(1);
                 break;
             case KeyEvent.VK_H: //harder
-                difficulty += 0.1;
+                difficulty += 0.10;
                 break;
             case KeyEvent.VK_E: //easier
-                difficulty -= 0.1;
+                difficulty -= 0.10;
                 break;
 		}
+	}
+
+	public double getDifficulty(){
+		return difficulty;
 	}
 
 	public long getScore(){
@@ -113,7 +118,6 @@ public class GameEngine implements KeyListener, GameReporter{
 	@Override
 	public void keyPressed(KeyEvent e) {
 		controlVehicle(e);
-		
 	}
 
 	@Override
