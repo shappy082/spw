@@ -13,7 +13,6 @@ public class Enemy extends Sprite{
 	
 	public Enemy(int x, int y) {
 		super(x, y, 5, 10);
-		
 	}
 
 	@Override

@@ -16,16 +16,17 @@ public class GameEngine implements KeyListener, GameReporter{
 		
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();	
 	private SpaceShip v;	
-	
-	private int gameSpeed = 50;
 	private Timer timer;
-	
+
+	private int gameSpeed = 50;
 	private long score = 0;
 	private double difficulty = 0.1;
+
+	private boolean gameoverStatus = false;
 	
 	public GameEngine(GamePanel gp, SpaceShip v) {
 		this.gp = gp;
-		this.v = v;		
+		this.v = v;	
 		
 		gp.sprites.add(v);
 		
@@ -37,7 +38,6 @@ public class GameEngine implements KeyListener, GameReporter{
 			}
 		});
 		timer.setRepeats(true);
-		
 	}
 	
 	public void start(){
@@ -64,6 +64,12 @@ public class GameEngine implements KeyListener, GameReporter{
 				e_iter.remove();
 				gp.sprites.remove(e);
 				score += 100;
+				if (score % 2000 == 0) {
+                    if (difficulty >= 1.0) {
+                        difficulty = 1.0;
+                    }
+                    else difficulty += 0.1;
+                }
 			}
 		}
 		
@@ -81,7 +87,9 @@ public class GameEngine implements KeyListener, GameReporter{
 	}
 	
 	public void die(){
+		gameoverStatus = true;
 		timer.stop();
+		gp.updateGameUI(this);
 	}
 	
 	void controlVehicle(KeyEvent e) {
@@ -98,14 +106,23 @@ public class GameEngine implements KeyListener, GameReporter{
             case KeyEvent.VK_DOWN:
                 v.moveUD(1);
                 break;
-            case KeyEvent.VK_H: //harder
+            case KeyEvent.VK_H: //Harder
                 difficulty += 0.10;
                 break;
-            case KeyEvent.VK_E: //easier
+            case KeyEvent.VK_E: //Easier
                 difficulty -= 0.10;
                 break;
+            case KeyEvent.VK_ENTER: //Restart Game
+            	if (gameoverStatus == true) {
+            		restart();
+            	}
+            	else break;
 		}
 	}
+
+	public boolean getGameoverStatus(){
+        return gameoverStatus;
+    }
 
 	public double getDifficulty(){
 		return difficulty;
@@ -115,6 +132,21 @@ public class GameEngine implements KeyListener, GameReporter{
 		return score;
 	}
 	
+	private void restart(){
+		gameoverStatus = false;
+		clear();
+		start();
+		difficulty = 0.1;
+		score = 0;
+		v.x = 180;
+		v.y = 550;
+	}
+
+	public void clear() {
+        gp.sprites.removeAll(enemies);
+        enemies.clear();
+    }
+
 	@Override
 	public void keyPressed(KeyEvent e) {
 		controlVehicle(e);
