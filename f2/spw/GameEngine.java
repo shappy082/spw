@@ -10,15 +10,19 @@ import java.util.Iterator;
 
 import javax.swing.Timer;
 
-
 public class GameEngine implements KeyListener, GameReporter{
 	GamePanel gp;
 		
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();	
 	private SpaceShip v;	
 	private Timer timer;
+	private Timer gameTime;
 
 	private int gameSpeed = 50;
+	private int hp = 2000;
+
+	private long timeCount = 0;
+	private long time = 0;
 	private long score = 0;
 	private double difficulty = 0.1;
 
@@ -29,7 +33,7 @@ public class GameEngine implements KeyListener, GameReporter{
 		this.v = v;	
 		
 		gp.sprites.add(v);
-		
+
 		timer = new Timer(gameSpeed, new ActionListener() {
 			
 			@Override
@@ -51,6 +55,11 @@ public class GameEngine implements KeyListener, GameReporter{
 	}
 	
 	private void process(){
+		timeCount++;
+		if (timeCount%20 == 0) {
+			time++;
+		}
+
 		if(Math.random() < difficulty){
 			generateEnemy();
 		}
@@ -65,23 +74,33 @@ public class GameEngine implements KeyListener, GameReporter{
 				gp.sprites.remove(e);
 				score += 100;
 				if (score % 2000 == 0) {
+					hp += 100;
+					if (hp >= 4000) {
+						hp = 4000;
+					}
                     if (difficulty >= 1.0) {
                         difficulty = 1.0;
                     }
-                    else difficulty += 0.1;
+                    else difficulty += 0.05;
                 }
 			}
 		}
 		
 		gp.updateGameUI(this);
 		
+	//HIT by Enemy
 		Rectangle2D.Double vr = v.getRectangle();
 		Rectangle2D.Double er;
 		for(Enemy e : enemies){
 			er = e.getRectangle();
 			if(er.intersects(vr)){
-				die();
-				return;
+				gp.sprites.remove(e);
+				hp -= 100;
+				if (hp <= 0) {
+					hp = 0;
+					die();
+				}
+			return;
 			}
 		}
 	}
@@ -128,6 +147,14 @@ public class GameEngine implements KeyListener, GameReporter{
 		return difficulty;
 	}
 
+	public int getHP(){
+		return hp;
+	}
+
+	public long getTime(){
+		return time;
+	}
+
 	public long getScore(){
 		return score;
 	}
@@ -138,6 +165,7 @@ public class GameEngine implements KeyListener, GameReporter{
 		start();
 		difficulty = 0.1;
 		score = 0;
+		hp = 2000;
 		v.x = 180;
 		v.y = 550;
 	}

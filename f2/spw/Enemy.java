@@ -25,7 +25,6 @@ public class Enemy extends Sprite{
 		}
 		g.setColor(Color.RED);
 		g.fillRect(x, y, width, height);
-		
 	}
 
 	public void proceed(){
