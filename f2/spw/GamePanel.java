@@ -36,6 +36,9 @@ public class GamePanel extends JPanel {
 		//Score Display
         big.drawString(String.format("%08d", reporter.getScore()), 165, 20);
 
+        //Display text on Spaceship
+        //big.drawString("player", reporter.getPosition().x - 10, reporter.getPosition().y - 10);
+
         //Difficult Displays
         if (reporter.getDifficulty() > 0.7) {
             big.drawString("Difficult: HARD", 280, 20);
@@ -58,6 +61,14 @@ public class GamePanel extends JPanel {
         	big.drawString("Press ENTER to play again", 122, 320);
         	big.setFont(new Font ("TimesRoman", Font.BOLD, 20));
             big.drawString("GAME OVER", 135, 300);
+        }
+
+		//PAUSE Display
+        big.setColor(Color.WHITE);
+        if (reporter.getPauseStatus() == true) {
+        	big.drawString("Press P to resume again", 125, 320);
+        	big.setFont(new Font ("TimesRoman", Font.BOLD, 20));
+            big.drawString("GAME PAUSE", 128, 300);
         }
 
 		repaint();

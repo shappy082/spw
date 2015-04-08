@@ -7,5 +7,7 @@ public interface GameReporter {
 	long getTime();
     double getDifficulty();
     boolean getGameoverStatus();
+    boolean getPauseStatus();
+    SpaceShip getPosition();
 
 }

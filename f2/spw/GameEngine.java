@@ -13,7 +13,8 @@ import javax.swing.Timer;
 public class GameEngine implements KeyListener, GameReporter{
 	GamePanel gp;
 		
-	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();	
+	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+	private ArrayList<Medic> medics = new ArrayList<Medic>();
 	private SpaceShip v;	
 	private Timer timer;
 	private Timer gameTime;
@@ -25,8 +26,10 @@ public class GameEngine implements KeyListener, GameReporter{
 	private long time = 0;
 	private long score = 0;
 	private double difficulty = 0.1;
+	private double medicChange = 0.01;
 
 	private boolean gameoverStatus = false;
+	private boolean pauseStatus = false;
 	
 	public GameEngine(GamePanel gp, SpaceShip v) {
 		this.gp = gp;
@@ -53,6 +56,12 @@ public class GameEngine implements KeyListener, GameReporter{
 		gp.sprites.add(e);
 		enemies.add(e);
 	}
+
+	private void generateMedic(){
+		Medic m = new Medic((int)(Math.random()*390), 30);
+		gp.sprites.add(m);
+		medics.add(m);
+	}
 	
 	private void process(){
 		timeCount++;
@@ -60,8 +69,11 @@ public class GameEngine implements KeyListener, GameReporter{
 			time++;
 		}
 
-		if(Math.random() < difficulty){
+		if (Math.random() < difficulty){
 			generateEnemy();
+		}
+		if (Math.random() < medicChange){
+			generateMedic();
 		}
 		
 		Iterator<Enemy> e_iter = enemies.iterator();
@@ -74,10 +86,6 @@ public class GameEngine implements KeyListener, GameReporter{
 				gp.sprites.remove(e);
 				score += 100;
 				if (score % 2000 == 0) {
-					hp += 100;
-					if (hp >= 4000) {
-						hp = 4000;
-					}
                     if (difficulty >= 1.0) {
                         difficulty = 1.0;
                     }
@@ -85,10 +93,22 @@ public class GameEngine implements KeyListener, GameReporter{
                 }
 			}
 		}
+
+		Iterator<Medic> m_iter = medics.iterator();
+        while (m_iter.hasNext()) {
+            Medic m = m_iter.next();
+            m.proceed();
+
+            if (!m.isAlive()) {
+                m_iter.remove();
+                gp.sprites.remove(m);
+                score += 100;
+            }
+        }
 		
 		gp.updateGameUI(this);
 		
-	//HIT by Enemy
+//HIT by Enemy
 		Rectangle2D.Double vr = v.getRectangle();
 		Rectangle2D.Double er;
 		for(Enemy e : enemies){
@@ -103,13 +123,57 @@ public class GameEngine implements KeyListener, GameReporter{
 			return;
 			}
 		}
+
+//GET Medic
+		Rectangle2D.Double mr = v.getRectangle();
+    	Rectangle2D.Double rm;
+    	for (Medic m : medics) {
+            rm = m.getRectangle();
+            if (rm.intersects(mr)) {
+                gp.sprites.remove(m);
+                hp += 100;
+                return;
+            }
+        }
 	}
-	
+
 	public void die(){
 		gameoverStatus = true;
 		timer.stop();
 		gp.updateGameUI(this);
 	}
+
+	public void pause(){
+		if (pauseStatus == false && gameoverStatus == false) {
+			pauseStatus = true;
+			gp.updateGameUI(this);
+			timer.stop();
+		}
+		else if (pauseStatus == true && gameoverStatus == false) {
+			pauseStatus = false;
+			timer.start();
+		}
+	}
+
+	private void restart(){
+		if (gameoverStatus == true) {
+			difficulty = 0.1;
+			score = 0;
+			hp = 2000;
+			v.x = 180;
+			v.y = 550;
+			time = 0;
+
+			clear();
+			start();
+			gameoverStatus = false;
+		}
+	}
+
+	public void clear() {
+        gp.sprites.removeAll(enemies);
+        enemies.clear();
+    }
 	
 	void controlVehicle(KeyEvent e) {
 		switch (e.getKeyCode()) {
@@ -125,6 +189,11 @@ public class GameEngine implements KeyListener, GameReporter{
             case KeyEvent.VK_DOWN:
                 v.moveUD(1);
                 break;
+		}
+	}
+
+	void controlGame(KeyEvent e) {
+		switch (e.getKeyCode()) {
             case KeyEvent.VK_H: //Harder
                 difficulty += 0.10;
                 break;
@@ -132,11 +201,20 @@ public class GameEngine implements KeyListener, GameReporter{
                 difficulty -= 0.10;
                 break;
             case KeyEvent.VK_ENTER: //Restart Game
-            	if (gameoverStatus == true) {
-            		restart();
-            	}
-            	else break;
+            	restart();
+            	break;
+            case KeyEvent.VK_P: //Pause Game
+            	pause();
+            	break;
+            case KeyEvent.VK_M: //Release Medic **FOR DEBUG**
+            	generateMedic();
+            	break;
 		}
+	}
+
+//GET game value
+	public boolean getPauseStatus(){
+		return pauseStatus;
 	}
 
 	public boolean getGameoverStatus(){
@@ -158,26 +236,17 @@ public class GameEngine implements KeyListener, GameReporter{
 	public long getScore(){
 		return score;
 	}
-	
-	private void restart(){
-		gameoverStatus = false;
-		clear();
-		start();
-		difficulty = 0.1;
-		score = 0;
-		hp = 2000;
-		v.x = 180;
-		v.y = 550;
-	}
 
-	public void clear() {
-        gp.sprites.removeAll(enemies);
-        enemies.clear();
-    }
+	public SpaceShip getPosition(){
+		return v;
+	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		controlVehicle(e);
+		if (pauseStatus == false) {
+			controlVehicle(e);
+		}
+		controlGame(e);
 	}
 
 	@Override
