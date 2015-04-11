@@ -15,7 +15,8 @@ public class GameEngine implements KeyListener, GameReporter{
 		
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 	private ArrayList<Medic> medics = new ArrayList<Medic>();
-	private SpaceShip v;	
+	private SpaceShip v;
+
 	private Timer timer;
 	private Timer gameTime;
 
@@ -30,10 +31,15 @@ public class GameEngine implements KeyListener, GameReporter{
 
 	private boolean gameoverStatus = false;
 	private boolean pauseStatus = false;
+
+	private Sound bgm = new Sound("space.wav");
+	private Sound gameoverSound = new Sound("gameOver.wav");
+	private Sound healthSound = new Sound("health.wav");
+	private Sound hitSound = new Sound("hit.wav");
 	
 	public GameEngine(GamePanel gp, SpaceShip v) {
 		this.gp = gp;
-		this.v = v;	
+		this.v = v;
 		
 		gp.sprites.add(v);
 
@@ -49,6 +55,8 @@ public class GameEngine implements KeyListener, GameReporter{
 	
 	public void start(){
 		timer.start();
+		bgm.loop();
+		bgm.play();
 	}
 	
 	private void generateEnemy(){
@@ -115,6 +123,7 @@ public class GameEngine implements KeyListener, GameReporter{
 			er = e.getRectangle();
 			if(er.intersects(vr)){
 				gp.sprites.remove(e);
+				hitSound.play();
 				hp -= 100;
 				if (hp <= 0) {
 					hp = 0;
@@ -131,15 +140,21 @@ public class GameEngine implements KeyListener, GameReporter{
             rm = m.getRectangle();
             if (rm.intersects(mr)) {
                 gp.sprites.remove(m);
+                healthSound.play();
                 hp += 100;
+                if (hp >= 4000) {
+                	hp = 4000;
+                }
                 return;
             }
         }
 	}
 
 	public void die(){
+		gameoverSound.play();
 		gameoverStatus = true;
 		timer.stop();
+		bgm.stop();
 		gp.updateGameUI(this);
 	}
 
@@ -155,7 +170,7 @@ public class GameEngine implements KeyListener, GameReporter{
 		}
 	}
 
-	private void restart(){
+	private void restart(){ 
 		if (gameoverStatus == true) {
 			difficulty = 0.1;
 			score = 0;
@@ -173,6 +188,8 @@ public class GameEngine implements KeyListener, GameReporter{
 	public void clear() {
         gp.sprites.removeAll(enemies);
         enemies.clear();
+        gp.sprites.removeAll(medics);
+        medics.clear();
     }
 	
 	void controlVehicle(KeyEvent e) {
