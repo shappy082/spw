@@ -15,6 +15,7 @@ public class GameEngine implements KeyListener, GameReporter{
 		
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 	private ArrayList<Medic> medics = new ArrayList<Medic>();
+	private ArrayList<Star> stars = new ArrayList<Star>();
 	private SpaceShip v;
 
 	private Timer timer;
@@ -28,6 +29,7 @@ public class GameEngine implements KeyListener, GameReporter{
 	private long score = 0;
 	private double difficulty = 0.1;
 	private double medicChange = 0.01;
+	private double starChange = 2.0;
 
 	private boolean gameoverStatus = false;
 	private boolean pauseStatus = false;
@@ -70,6 +72,12 @@ public class GameEngine implements KeyListener, GameReporter{
 		gp.sprites.add(m);
 		medics.add(m);
 	}
+
+	private void generateStar(){
+		Star s = new Star((int)(Math.random()*390), (int)(Math.random()*640));
+		gp.sprites.add(s);
+		stars.add(s);
+	}
 	
 	private void process(){
 		timeCount++;
@@ -82,6 +90,9 @@ public class GameEngine implements KeyListener, GameReporter{
 		}
 		if (Math.random() < medicChange){
 			generateMedic();
+		}
+		if (Math.random() < starChange){
+			generateStar();
 		}
 		
 		Iterator<Enemy> e_iter = enemies.iterator();
@@ -111,6 +122,16 @@ public class GameEngine implements KeyListener, GameReporter{
                 m_iter.remove();
                 gp.sprites.remove(m);
                 score += 100;
+            }
+        }
+
+        Iterator<Star> s_iter = stars.iterator();
+        while (s_iter.hasNext()) {
+            Star s = s_iter.next();
+
+            if (!s.isAlive()) {
+                s_iter.remove();
+                gp.sprites.remove(s);
             }
         }
 		
