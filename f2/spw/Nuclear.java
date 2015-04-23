@@ -3,18 +3,23 @@ package f2.spw;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
-public class Star extends Sprite {
+public class Nuclear extends Sprite {
 
+    private int step = 5;
     private boolean alive = true;
 
-    public Star(int x, int y) {
-        super(x, y, 2, 2);
+    public Nuclear(int x, int y) {
+        super(x, y, 9, 9);
     }
 
     @Override
     public void draw(Graphics2D g) {
-        g.setColor(new Color((int)(Math.random() * 0x1000000)));
+        g.setColor(Color.YELLOW);
         g.fillOval(x, y, width, height);
+    }
+
+    public void proceed() {
+        y += step;
     }
 
     public boolean isAlive() {

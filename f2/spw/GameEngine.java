@@ -15,6 +15,7 @@ public class GameEngine implements KeyListener, GameReporter{
 		
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 	private ArrayList<Medic> medics = new ArrayList<Medic>();
+	private ArrayList<Nuclear> nuclears = new ArrayList<>();
 	private ArrayList<Star> stars = new ArrayList<Star>();
 	private SpaceShip v;
 
@@ -24,20 +25,23 @@ public class GameEngine implements KeyListener, GameReporter{
 	private int gameSpeed = 50;
 	private int hp = 2000;
 
+	private int numNuclear = 0;
 	private long timeCount = 0;
 	private long time = 0;
 	private long score = 0;
 	private double difficulty = 0.1;
-	private double medicChange = 0.01;
-	private double starChange = 2.0;
+	private double medicChange = 0.005;
+	private double starChange = 0.5;
+	private double nuclearChange = 0.0001;
 
 	private boolean gameoverStatus = false;
 	private boolean pauseStatus = false;
 
 	private Sound bgm = new Sound("space.wav");
 	private Sound gameoverSound = new Sound("gameOver.wav");
-	private Sound healthSound = new Sound("health.wav");
+	private Sound itemSound = new Sound("health.wav");
 	private Sound hitSound = new Sound("hit.wav");
+	private Sound bombSound = new Sound("bomb.wav");
 	
 	public GameEngine(GamePanel gp, SpaceShip v) {
 		this.gp = gp;
@@ -73,12 +77,18 @@ public class GameEngine implements KeyListener, GameReporter{
 		medics.add(m);
 	}
 
-	private void generateStar(){
+	private void generateNuclear() {
+        Nuclear n = new Nuclear((int) (Math.random()*390), 30);
+        gp.sprites.add(n);
+        nuclears.add(n);
+    }
+
+    private void generateStar(){
 		Star s = new Star((int)(Math.random()*390), (int)(Math.random()*640));
 		gp.sprites.add(s);
 		stars.add(s);
 	}
-	
+
 	private void process(){
 		timeCount++;
 		if (timeCount%20 == 0) {
@@ -91,9 +101,12 @@ public class GameEngine implements KeyListener, GameReporter{
 		if (Math.random() < medicChange){
 			generateMedic();
 		}
-		if (Math.random() < starChange){
+		if (Math.random() < starChange && stars.size() < 100){
 			generateStar();
 		}
+		if ((float)Math.random() < nuclearChange) {
+            generateNuclear();
+        }
 		
 		Iterator<Enemy> e_iter = enemies.iterator();
 		while(e_iter.hasNext()){
@@ -125,6 +138,18 @@ public class GameEngine implements KeyListener, GameReporter{
             }
         }
 
+        Iterator<Nuclear> n_iter = nuclears.iterator();
+        while (n_iter.hasNext()) {
+            Nuclear n = n_iter.next();
+            n.proceed();
+
+            if (!n.isAlive()) {
+                n_iter.remove();
+                gp.sprites.remove(n);
+                score += 1000;
+            }
+        }
+
         Iterator<Star> s_iter = stars.iterator();
         while (s_iter.hasNext()) {
             Star s = s_iter.next();
@@ -143,9 +168,10 @@ public class GameEngine implements KeyListener, GameReporter{
 		for(Enemy e : enemies){
 			er = e.getRectangle();
 			if(er.intersects(vr)){
+				enemies.remove(e);
 				gp.sprites.remove(e);
 				hitSound.play();
-				hp -= 100;
+				hp -= 200;
 				if (hp <= 0) {
 					hp = 0;
 					die();
@@ -153,16 +179,35 @@ public class GameEngine implements KeyListener, GameReporter{
 			return;
 			}
 		}
-
+//Get Nuclear
+		Rectangle2D.Double nr = v.getRectangle();
+        Rectangle2D.Double rn;
+        for (Nuclear n : nuclears) {
+            rn = n.getRectangle();
+            if (rn.intersects(nr)) {
+                itemSound.play();
+                nuclears.remove(n);
+                gp.sprites.remove(n);
+                numNuclear++;
+                if (numNuclear > 3) {
+                	numNuclear = 3;
+                	bombSound.play();
+                	gp.sprites.removeAll(medics);
+                	clear();
+                }
+                return;
+            }
+        }
 //GET Medic
 		Rectangle2D.Double mr = v.getRectangle();
     	Rectangle2D.Double rm;
     	for (Medic m : medics) {
             rm = m.getRectangle();
             if (rm.intersects(mr)) {
+            	medics.remove(m);
                 gp.sprites.remove(m);
-                healthSound.play();
-                hp += 100;
+                itemSound.play();
+                hp += 500;
                 if (hp >= 4000) {
                 	hp = 4000;
                 }
@@ -195,11 +240,12 @@ public class GameEngine implements KeyListener, GameReporter{
 		if (gameoverStatus == true) {
 			difficulty = 0.1;
 			score = 0;
+			numNuclear = 0;
 			hp = 2000;
 			v.x = 180;
 			v.y = 550;
 			time = 0;
-
+			gp.sprites.removeAll(stars);
 			clear();
 			start();
 			gameoverStatus = false;
@@ -210,6 +256,8 @@ public class GameEngine implements KeyListener, GameReporter{
         gp.sprites.removeAll(enemies);
         enemies.clear();
         gp.sprites.removeAll(medics);
+        medics.clear();
+        gp.sprites.removeAll(nuclears);
         medics.clear();
     }
 	
@@ -226,6 +274,13 @@ public class GameEngine implements KeyListener, GameReporter{
                 break;
             case KeyEvent.VK_DOWN:
                 v.moveUD(1);
+                break;
+            case KeyEvent.VK_SPACE:
+            	if (numNuclear != 0 && gameoverStatus == false) {
+            		bombSound.play();
+            		clear();
+            		numNuclear--;
+            	}
                 break;
 		}
 	}
@@ -246,6 +301,9 @@ public class GameEngine implements KeyListener, GameReporter{
             	break;
             case KeyEvent.VK_M: //Release Medic **FOR DEBUG**
             	generateMedic();
+            	break;
+            case KeyEvent.VK_N: //Release Nuclear **FOR DEBUG**
+            	generateNuclear();
             	break;
 		}
 	}
@@ -275,10 +333,11 @@ public class GameEngine implements KeyListener, GameReporter{
 		return score;
 	}
 
-	public SpaceShip getPosition(){
-		return v;
+	public int getNumNuclear(){
+		return numNuclear;
 	}
 
+//CONTROL
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if (pauseStatus == false) {

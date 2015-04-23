@@ -23,7 +23,9 @@ public class GamePanel extends JPanel {
 
 	public void updateGameUI(GameReporter reporter){
 		int barHP = reporter.getHP()/200;
+		int numNu = reporter.getNumNuclear();
 		StringBuilder hp = new StringBuilder();
+		StringBuilder nu = new StringBuilder();
 
 		big.clearRect(0, 0, 400, 600);
 		big.setColor(Color.WHITE);
@@ -31,7 +33,7 @@ public class GamePanel extends JPanel {
 
 		//Time Display
 		long time = reporter.getTime();
-		big.drawString(String.format("Time: %02d.%02d", time/60, time%60), 20, 40);
+		big.drawString(String.format("Time: %02d:%02d", time/60, time%60), 20, 40);
 
 		//Score Display
         big.drawString(String.format("%08d", reporter.getScore()), 165, 20);
@@ -46,6 +48,12 @@ public class GamePanel extends JPanel {
         else if (reporter.getDifficulty() > 0.0) {
             big.drawString("Difficult: EASY", 280, 20);
         }
+        //Nuclear Display
+        big.drawString("Nuclear: ", 280, 40);
+        for (int i = 0; i < numNu; i++) {
+			nu.append("O");
+		}
+        big.drawString(nu.toString(), 330, 40);
 
 		//HP Display
 		big.drawString("HP: ", 20, 20);
@@ -63,9 +71,6 @@ public class GamePanel extends JPanel {
 		}
 		big.drawString(hp.toString(), 45, 20);
 		hp.delete(0,20);
-
-        //Display text on Spaceship
-        //big.drawString("player", reporter.getPosition().x - 10, reporter.getPosition().y - 10);
 
 		//DRAW Object
         for (Sprite s : sprites) {
