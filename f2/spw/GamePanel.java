@@ -7,11 +7,16 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
+import java.io.*;
+import java.net.*;
+import java.util.Scanner;
+
 import javax.swing.JPanel;
 
 public class GamePanel extends JPanel {
-	
+
 	private BufferedImage bi;
+	private String highscore;
 	Graphics2D big;
 	ArrayList<Sprite> sprites = new ArrayList<Sprite>();
 
@@ -36,24 +41,28 @@ public class GamePanel extends JPanel {
 		big.drawString(String.format("Time: %02d:%02d", time/60, time%60), 20, 40);
 
 		//Score Display
-        big.drawString(String.format("%08d", reporter.getScore()), 165, 20);
+		if (reporter.getScore() <= reporter.getHighScore()) {
+			big.drawString(String.format("HIGH SCORE: %08d", reporter.getHighScore()), 120, 20);
+		}else
+		big.drawString(String.format("HIGH SCORE: %08d", reporter.getScore()), 120, 20);
+		big.drawString(String.format("%08d", reporter.getScore()), 165, 40);
 
         //Difficult Displays
-        if (reporter.getDifficulty() > 0.7) {
-            big.drawString("Difficult: HARD", 280, 20);
-        }
-        else if (reporter.getDifficulty() > 0.4) {
-            big.drawString("Difficult: NORMAL", 280, 20);
-        }
-        else if (reporter.getDifficulty() > 0.0) {
-            big.drawString("Difficult: EASY", 280, 20);
-        }
+		if (reporter.getDifficulty() > 0.7) {
+			big.drawString("Difficult: HARD", 280, 20);
+		}
+		else if (reporter.getDifficulty() > 0.4) {
+			big.drawString("Difficult: NORMAL", 280, 20);
+		}
+		else if (reporter.getDifficulty() > 0.0) {
+			big.drawString("Difficult: EASY", 280, 20);
+		}
         //Nuclear Display
-        big.drawString("Nuclear: ", 280, 40);
-        for (int i = 0; i < numNu; i++) {
+		big.drawString("Nuclear: ", 280, 40);
+		for (int i = 0; i < numNu; i++) {
 			nu.append("O");
 		}
-        big.drawString(nu.toString(), 330, 40);
+		big.drawString(nu.toString(), 330, 40);
 
 		//HP Display
 		big.drawString("HP: ", 20, 20);
@@ -73,25 +82,28 @@ public class GamePanel extends JPanel {
 		hp.delete(0,20);
 
 		//DRAW Object
-        for (Sprite s : sprites) {
-            s.draw(big);
-        }
+		for (Sprite s : sprites) {
+			s.draw(big);
+		}
 
         //GAME OVER Display
-        big.setColor(Color.WHITE);
-        if (reporter.getGameoverStatus() == true) {
-        	big.drawString("Press ENTER to play again", 122, 320);
-        	big.setFont(new Font ("TimesRoman", Font.BOLD, 20));
-            big.drawString("GAME OVER", 135, 300);
-        }
+		big.setColor(Color.WHITE);
+		if (reporter.getGameoverStatus() == true) {
+			big.drawString("Press ENTER to play again", 122, 320);
+			big.setFont(new Font ("TimesRoman", Font.BOLD, 20));
+			if (reporter.getScore() >= reporter.getHighScore()) {
+				big.drawString(String.format("YOU GET NEW HIGHSCORE"), 60, 280);
+			}
+			big.drawString("GAME OVER", 135, 300);
+		}
 
 		//PAUSE Display
-        big.setColor(Color.WHITE);
-        if (reporter.getPauseStatus() == true) {
-        	big.drawString("Press P to resume again", 125, 320);
-        	big.setFont(new Font ("TimesRoman", Font.BOLD, 20));
-            big.drawString("GAME PAUSE", 128, 300);
-        }
+		big.setColor(Color.WHITE);
+		if (reporter.getPauseStatus() == true) {
+			big.drawString("Press P to resume again", 125, 320);
+			big.setFont(new Font ("TimesRoman", Font.BOLD, 20));
+			big.drawString("GAME PAUSE", 128, 300);
+		}
 
 		repaint();
 	}

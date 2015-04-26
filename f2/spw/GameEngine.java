@@ -7,12 +7,15 @@ import java.awt.event.KeyListener;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Scanner;
+import java.io.*;
+import java.net.*;
 
 import javax.swing.Timer;
 
 public class GameEngine implements KeyListener, GameReporter{
 	GamePanel gp;
-		
+
 	private ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 	private ArrayList<Medic> medics = new ArrayList<Medic>();
 	private ArrayList<Nuclear> nuclears = new ArrayList<>();
@@ -32,7 +35,7 @@ public class GameEngine implements KeyListener, GameReporter{
 	private double difficulty = 0.1;
 	private double medicChange = 0.005;
 	private double starChange = 0.5;
-	private double nuclearChange = 0.0001;
+	private double nuclearChange = 0.0002;
 
 	private boolean gameoverStatus = false;
 	private boolean pauseStatus = false;
@@ -42,6 +45,12 @@ public class GameEngine implements KeyListener, GameReporter{
 	private Sound itemSound = new Sound("health.wav");
 	private Sound hitSound = new Sound("hit.wav");
 	private Sound bombSound = new Sound("bomb.wav");
+	private Sound hgSound = new Sound("highscore.wav");
+
+//Get Highscore
+	private long highscore;
+	URL url = getClass().getResource("score.txt");
+	File highscoreFile = new File(url.getPath());
 	
 	public GameEngine(GamePanel gp, SpaceShip v) {
 		this.gp = gp;
@@ -63,6 +72,12 @@ public class GameEngine implements KeyListener, GameReporter{
 		timer.start();
 		bgm.loop();
 		bgm.play();
+	//read highscore
+		try{
+			highscore = Long.parseLong(new Scanner(highscoreFile).useDelimiter("\\Z").next());
+		}catch(Exception e){
+			System.out.println("Can't Read File.");
+		}
 	}
 	
 	private void generateEnemy(){
@@ -78,12 +93,12 @@ public class GameEngine implements KeyListener, GameReporter{
 	}
 
 	private void generateNuclear() {
-        Nuclear n = new Nuclear((int) (Math.random()*390), 30);
-        gp.sprites.add(n);
-        nuclears.add(n);
-    }
+		Nuclear n = new Nuclear((int) (Math.random()*390), 30);
+		gp.sprites.add(n);
+		nuclears.add(n);
+	}
 
-    private void generateStar(){
+	private void generateStar(){
 		Star s = new Star((int)(Math.random()*390), (int)(Math.random()*640));
 		gp.sprites.add(s);
 		stars.add(s);
@@ -105,8 +120,8 @@ public class GameEngine implements KeyListener, GameReporter{
 			generateStar();
 		}
 		if ((float)Math.random() < nuclearChange) {
-            generateNuclear();
-        }
+			generateNuclear();
+		}
 		
 		Iterator<Enemy> e_iter = enemies.iterator();
 		while(e_iter.hasNext()){
@@ -118,48 +133,38 @@ public class GameEngine implements KeyListener, GameReporter{
 				gp.sprites.remove(e);
 				score += 100;
 				if (score % 2000 == 0) {
-                    if (difficulty >= 1.0) {
-                        difficulty = 1.0;
-                    }
-                    else difficulty += 0.05;
-                }
+					if (difficulty >= 1.0) {
+						difficulty = 1.0;
+					}
+					else difficulty += 0.05;
+				}
 			}
 		}
 
 		Iterator<Medic> m_iter = medics.iterator();
-        while (m_iter.hasNext()) {
-            Medic m = m_iter.next();
-            m.proceed();
+		while (m_iter.hasNext()) {
+			Medic m = m_iter.next();
+			m.proceed();
 
-            if (!m.isAlive()) {
-                m_iter.remove();
-                gp.sprites.remove(m);
-                score += 100;
-            }
-        }
+			if (!m.isAlive()) {
+				m_iter.remove();
+				gp.sprites.remove(m);
+				score += 100;
+			}
+		}
 
-        Iterator<Nuclear> n_iter = nuclears.iterator();
-        while (n_iter.hasNext()) {
-            Nuclear n = n_iter.next();
-            n.proceed();
+		Iterator<Nuclear> n_iter = nuclears.iterator();
+		while (n_iter.hasNext()) {
+			Nuclear n = n_iter.next();
+			n.proceed();
 
-            if (!n.isAlive()) {
-                n_iter.remove();
-                gp.sprites.remove(n);
-                score += 1000;
-            }
-        }
+			if (!n.isAlive()) {
+				n_iter.remove();
+				gp.sprites.remove(n);
+				score += 1000;
+			}
+		}
 
-        Iterator<Star> s_iter = stars.iterator();
-        while (s_iter.hasNext()) {
-            Star s = s_iter.next();
-
-            if (!s.isAlive()) {
-                s_iter.remove();
-                gp.sprites.remove(s);
-            }
-        }
-		
 		gp.updateGameUI(this);
 		
 //HIT by Enemy
@@ -176,48 +181,58 @@ public class GameEngine implements KeyListener, GameReporter{
 					hp = 0;
 					die();
 				}
-			return;
+				return;
 			}
 		}
 //Get Nuclear
 		Rectangle2D.Double nr = v.getRectangle();
-        Rectangle2D.Double rn;
-        for (Nuclear n : nuclears) {
-            rn = n.getRectangle();
-            if (rn.intersects(nr)) {
-                itemSound.play();
-                nuclears.remove(n);
-                gp.sprites.remove(n);
-                numNuclear++;
-                if (numNuclear > 3) {
-                	numNuclear = 3;
-                	bombSound.play();
-                	gp.sprites.removeAll(medics);
-                	clear();
-                }
-                return;
-            }
-        }
+		Rectangle2D.Double rn;
+		for (Nuclear n : nuclears) {
+			rn = n.getRectangle();
+			if (rn.intersects(nr)) {
+				itemSound.play();
+				nuclears.remove(n);
+				gp.sprites.remove(n);
+				numNuclear++;
+				if (numNuclear > 3) {
+					numNuclear = 3;
+					bombSound.play();
+					gp.sprites.removeAll(medics);
+					clear();
+				}
+				return;
+			}
+		}
 //GET Medic
 		Rectangle2D.Double mr = v.getRectangle();
-    	Rectangle2D.Double rm;
-    	for (Medic m : medics) {
-            rm = m.getRectangle();
-            if (rm.intersects(mr)) {
-            	medics.remove(m);
-                gp.sprites.remove(m);
-                itemSound.play();
-                hp += 500;
-                if (hp >= 4000) {
-                	hp = 4000;
-                }
-                return;
-            }
-        }
+		Rectangle2D.Double rm;
+		for (Medic m : medics) {
+			rm = m.getRectangle();
+			if (rm.intersects(mr)) {
+				medics.remove(m);
+				gp.sprites.remove(m);
+				itemSound.play();
+				hp += 500;
+				if (hp >= 4000) {
+					hp = 4000;
+				}
+				return;
+			}
+		}
 	}
 
 	public void die(){
-		gameoverSound.play();
+		if (score > highscore) {
+			hgSound.play();
+			try{
+				FileWriter f2 = new FileWriter(highscoreFile, false);
+				f2.write(String.valueOf(score));
+				f2.close();
+			}catch(IOException e){
+				e.printStackTrace();
+			}
+		}
+		else gameoverSound.play();
 		gameoverStatus = true;
 		timer.stop();
 		bgm.stop();
@@ -253,106 +268,111 @@ public class GameEngine implements KeyListener, GameReporter{
 	}
 
 	public void clear() {
-        gp.sprites.removeAll(enemies);
-        enemies.clear();
-        gp.sprites.removeAll(medics);
-        medics.clear();
-        gp.sprites.removeAll(nuclears);
-        medics.clear();
-    }
+		gp.sprites.removeAll(enemies);
+		enemies.clear();
+		gp.sprites.removeAll(medics);
+		medics.clear();
+		gp.sprites.removeAll(nuclears);
+		medics.clear();
+	}
 	
 	void controlVehicle(KeyEvent e) {
 		switch (e.getKeyCode()) {
-            case KeyEvent.VK_LEFT:
-                v.moveLR(-1);
-                break;
-            case KeyEvent.VK_RIGHT:
-                v.moveLR(1);
-                break;
-            case KeyEvent.VK_UP:
-                v.moveUD(-1);
-                break;
-            case KeyEvent.VK_DOWN:
-                v.moveUD(1);
-                break;
-            case KeyEvent.VK_SPACE:
-            	if (numNuclear != 0 && gameoverStatus == false) {
-            		bombSound.play();
-            		clear();
-            		numNuclear--;
-            	}
-                break;
+			case KeyEvent.VK_LEFT:
+			v.moveLR(-1);
+			break;
+			case KeyEvent.VK_RIGHT:
+			v.moveLR(1);
+			break;
+			case KeyEvent.VK_UP:
+			v.moveUD(-1);
+			break;
+			case KeyEvent.VK_DOWN:
+			v.moveUD(1);
+			break;
+			case KeyEvent.VK_SPACE:
+			if (numNuclear != 0 && gameoverStatus == false) {
+				bombSound.play();
+				clear();
+				numNuclear--;
+				score += 2000;
+			}
+			break;
 		}
 	}
 
 	void controlGame(KeyEvent e) {
 		switch (e.getKeyCode()) {
             case KeyEvent.VK_H: //Harder
-                difficulty += 0.10;
-                break;
+            difficulty += 0.10;
+            break;
             case KeyEvent.VK_E: //Easier
-                difficulty -= 0.10;
-                break;
+            difficulty -= 0.10;
+            break;
             case KeyEvent.VK_ENTER: //Restart Game
-            	restart();
-            	break;
+            restart();
+            break;
             case KeyEvent.VK_P: //Pause Game
-            	pause();
-            	break;
+            pause();
+            break;
             case KeyEvent.VK_M: //Release Medic **FOR DEBUG**
-            	generateMedic();
-            	break;
+            generateMedic();
+            break;
             case KeyEvent.VK_N: //Release Nuclear **FOR DEBUG**
-            	generateNuclear();
-            	break;
-		}
-	}
-
-//GET game value
-	public boolean getPauseStatus(){
-		return pauseStatus;
-	}
-
-	public boolean getGameoverStatus(){
-        return gameoverStatus;
+            generateNuclear();
+            break;
+        }
     }
 
-	public double getDifficulty(){
-		return difficulty;
-	}
+//GET game value
+    public boolean getPauseStatus(){
+    	return pauseStatus;
+    }
 
-	public int getHP(){
-		return hp;
-	}
+    public boolean getGameoverStatus(){
+    	return gameoverStatus;
+    }
 
-	public long getTime(){
-		return time;
-	}
+    public double getDifficulty(){
+    	return difficulty;
+    }
 
-	public long getScore(){
-		return score;
-	}
+    public int getHP(){
+    	return hp;
+    }
 
-	public int getNumNuclear(){
-		return numNuclear;
-	}
+    public long getTime(){
+    	return time;
+    }
+
+    public long getScore(){
+    	return score;
+    }
+
+    public long getHighScore(){
+    	return highscore;
+    }
+
+    public int getNumNuclear(){
+    	return numNuclear;
+    }
 
 //CONTROL
-	@Override
-	public void keyPressed(KeyEvent e) {
-		if (pauseStatus == false) {
-			controlVehicle(e);
-		}
-		controlGame(e);
-	}
+    @Override
+    public void keyPressed(KeyEvent e) {
+    	if (pauseStatus == false) {
+    		controlVehicle(e);
+    	}
+    	controlGame(e);
+    }
 
-	@Override
-	public void keyReleased(KeyEvent e) {
+    @Override
+    public void keyReleased(KeyEvent e) {
 		//do nothing
-	}
+    }
 
-	@Override
-	public void keyTyped(KeyEvent e) {
+    @Override
+    public void keyTyped(KeyEvent e) {
 		//do nothing		
-	}
+    }
 }
